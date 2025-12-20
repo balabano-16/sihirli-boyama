@@ -1,10 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// API anahtarını Vite'in 'define' üzerinden veya direkt process.env üzerinden almasını sağlarız
 const getAI = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    console.warn("API_KEY bulunamadı! Lütfen Vercel panelinden Environment Variables kısmına ekleyin.");
+    console.warn("API_KEY bulunamadı!");
   }
   return new GoogleGenAI({ apiKey: apiKey || '' });
 };
@@ -15,8 +14,6 @@ export const generateCreativePrompts = async (theme: string): Promise<string[]> 
     model: 'gemini-3-flash-preview',
     contents: `Generate 5 distinct, creative, and fun coloring book page descriptions for a children's book with the theme: "${theme}". 
     The descriptions must be in English.
-    The descriptions should be visual, mentioning specific characters or scenes. 
-    Keep them suitable for children.
     Ensure they are distinct from each other.`,
     config: {
       responseMimeType: "application/json",
@@ -30,10 +27,8 @@ export const generateCreativePrompts = async (theme: string): Promise<string[]> 
   });
 
   try {
-    const text = response.text;
-    return JSON.parse(text || "[]") as string[];
+    return JSON.parse(response.text || "[]") as string[];
   } catch (e) {
-    console.error("Prompt parsing error:", e);
     return [];
   }
 };
@@ -68,6 +63,7 @@ export const generateColoringPageImage = async (description: string, style: stri
     throw new Error("Resim verisi alınamadı.");
   }
 
+  // jsPDF PNG formatını bu şekilde daha sağlıklı işler
   return `data:image/png;base64,${part.inlineData.data}`;
 };
 
@@ -76,7 +72,7 @@ export const sendMessageToChat = async (message: string): Promise<string> => {
   const chat = ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: "Sen MagicColor asistanısın. Çocuklar ve ebeveynler için yaratıcı boyama kitabı temaları önerirsin. Türkçe, İngilizce ve İspanyolca konuşabilirsin.",
+      systemInstruction: "Sen MagicColor asistanısın. Çocuklar için boyama kitabı temaları önerirsin.",
     }
   });
   
