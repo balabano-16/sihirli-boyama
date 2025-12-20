@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
-import { Download, Sparkles, Loader2, BookOpen } from 'lucide-react';
+import { Download, Sparkles, Loader2, BookOpen, AlertCircle } from 'lucide-react';
 import { generateCreativePrompts, generateColoringPageImage } from '../services/geminiService';
 import { generatePDF } from '../utils/pdfGenerator';
 import { GeneratedImage, GenerationStatus, ArtStyle } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+
+// Bekleme fonksiyonu
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const Generator: React.FC = () => {
   const { t } = useLanguage();
@@ -24,22 +26,24 @@ export const Generator: React.FC = () => {
     setProgressMessage(t.header.planningMsg);
 
     try {
-      // Step 1: Generate prompts
       const prompts = await generateCreativePrompts(theme);
       
-      if (prompts.length === 0) {
-        throw new Error("Could not generate prompts. Please try a different theme.");
-      }
+      if (prompts.length === 0) throw new Error("PROMPTS_EMPTY");
 
       setStatus(GenerationStatus.GENERATING);
-      
       const newImages: GeneratedImage[] = [];
       
       for (let i = 0; i < prompts.length; i++) {
+        // Kota hatasını önlemek için her resim arasında 2 saniye bekle
+        if (i > 0) {
+          setProgressMessage("API dinlendiriliyor... (Kota koruması)");
+          await sleep(2000);
+        }
+
         const progressMsg = t.header.drawingStatus
           .replace('{current}', (i + 1).toString())
           .replace('{total}', prompts.length.toString())
-          .replace('{desc}', prompts[i].substring(0, 30));
+          .replace('{desc}', prompts[i].substring(0, 20));
           
         setProgressMessage(progressMsg);
         
@@ -52,9 +56,13 @@ export const Generator: React.FC = () => {
           };
           newImages.push(img);
           setGeneratedImages(prev => [...prev, img]);
-        } catch (err) {
+        } catch (err: any) {
+          if (err.message === "QUOTA_EXCEEDED") {
+            setStatus(GenerationStatus.ERROR);
+            setProgressMessage("Ücretsiz API kotası doldu. Lütfen 1-2 dakika bekleyip tekrar deneyin.");
+            return; // İşlemi durdur
+          }
           console.error(`Failed to generate image ${i + 1}`, err);
-          // Continue even if one fails
         }
       }
 
@@ -65,7 +73,7 @@ export const Generator: React.FC = () => {
         setProgressMessage(t.header.noImages);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setStatus(GenerationStatus.ERROR);
       setProgressMessage(t.header.error);
@@ -79,8 +87,6 @@ export const Generator: React.FC = () => {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
-      
-      {/* Input Section */}
       <div className="bg-white rounded-3xl shadow-xl p-8 mb-12 border border-indigo-50 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400"></div>
         
@@ -98,7 +104,7 @@ export const Generator: React.FC = () => {
                 value={childName}
                 onChange={(e) => setChildName(e.target.value)}
                 placeholder={t.header.childPlaceholder}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                 required
               />
             </div>
@@ -109,7 +115,7 @@ export const Generator: React.FC = () => {
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
                 placeholder={t.header.themePlaceholder}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                 required
               />
             </div>
@@ -120,7 +126,7 @@ export const Generator: React.FC = () => {
             <select
               value={artStyle}
               onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none cursor-pointer"
             >
               <option value="cartoon">{t.styles.cartoon}</option>
               <option value="realistic">{t.styles.realistic}</option>
@@ -150,7 +156,6 @@ export const Generator: React.FC = () => {
           </button>
         </form>
 
-        {/* Status Indicator */}
         {(status === GenerationStatus.PLANNING || status === GenerationStatus.GENERATING) && (
           <div className="mt-8 text-center animate-fade-in">
              <p className="text-indigo-600 font-medium">{progressMessage}</p>
@@ -161,13 +166,13 @@ export const Generator: React.FC = () => {
         )}
         
         {status === GenerationStatus.ERROR && (
-          <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-center border border-red-100">
+          <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-center border border-red-100 flex items-center justify-center gap-2">
+            <AlertCircle size={20} />
             {progressMessage}
           </div>
         )}
       </div>
 
-      {/* Results Section */}
       {generatedImages.length > 0 && (
         <div className="space-y-8 animate-fade-in-up">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -193,18 +198,12 @@ export const Generator: React.FC = () => {
             {generatedImages.map((img, idx) => (
               <div key={img.id} className="group relative bg-white p-4 rounded-2xl shadow-md border border-slate-100 hover:shadow-xl transition-all duration-300">
                 <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-slate-50 border border-slate-100">
-                  <img
-                    src={img.base64}
-                    alt={`Page ${idx + 1}`}
-                    className="w-full h-full object-contain"
-                  />
+                  <img src={img.base64} alt={`Page ${idx + 1}`} className="w-full h-full object-contain" />
                 </div>
                 <div className="mt-4">
-                  <div className="flex justify-between items-start">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-900 text-white text-xs font-bold rounded-full">
-                      {idx + 1}
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-900 text-white text-xs font-bold rounded-full">
+                    {idx + 1}
+                  </span>
                   <p className="mt-2 text-xs text-slate-400 line-clamp-2">{img.prompt}</p>
                 </div>
               </div>
