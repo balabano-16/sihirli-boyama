@@ -1,12 +1,14 @@
+import { GoogleGenAI, Type } from "@google/genai";
 
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
-
-// API istemcisini her çağrıda oluşturmak en güvenli yoldur
+// API anahtarını Vite'in 'define' üzerinden veya direkt process.env üzerinden almasını sağlarız
 const getAI = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("API_KEY bulunamadı! Lütfen Vercel panelinden Environment Variables kısmına ekleyin.");
+  }
+  return new GoogleGenAI({ apiKey: apiKey || '' });
 };
 
-// --- Resim Fikirleri Oluşturma ---
 export const generateCreativePrompts = async (theme: string): Promise<string[]> => {
   const ai = getAI();
   const response = await ai.models.generateContent({
@@ -28,14 +30,14 @@ export const generateCreativePrompts = async (theme: string): Promise<string[]> 
   });
 
   try {
-    return JSON.parse(response.text || "[]") as string[];
+    const text = response.text;
+    return JSON.parse(text || "[]") as string[];
   } catch (e) {
-    console.error("Prompt ayrıştırma hatası", e);
+    console.error("Prompt parsing error:", e);
     return [];
   }
 };
 
-// --- Boyama Sayfası Resmi Oluşturma ---
 export const generateColoringPageImage = async (description: string, style: string = 'cartoon'): Promise<string> => {
   const ai = getAI();
   
@@ -61,16 +63,14 @@ export const generateColoringPageImage = async (description: string, style: stri
     }
   });
 
-  // Resim partını bul
   const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
   if (!part?.inlineData?.data) {
-    throw new Error("Resim oluşturulamadı");
+    throw new Error("Resim verisi alınamadı.");
   }
 
   return `data:image/png;base64,${part.inlineData.data}`;
 };
 
-// --- Sohbet Yardımı ---
 export const sendMessageToChat = async (message: string): Promise<string> => {
   const ai = getAI();
   const chat = ai.chats.create({
@@ -80,6 +80,6 @@ export const sendMessageToChat = async (message: string): Promise<string> => {
     }
   });
   
-  const response = await chat.sendMessage({ message });
-  return response.text || "Üzgünüm, şu an cevap veremiyorum.";
+  const result = await chat.sendMessage({ message });
+  return result.text || "Üzgünüm, şu an cevap veremiyorum.";
 };
