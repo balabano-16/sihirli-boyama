@@ -45,6 +45,10 @@ export const generateColoringPageImage = async (description: string, style: stri
   try {
     const ai = getAI();
     
+    // Ücretli anahtar varsa daha yüksek kalite için pro modeli kullanılabilir, 
+    // ancak şu an maliyet ve hız dengesi için 2.5-flash-image ile devam ediyoruz.
+    const modelName = 'gemini-2.5-flash-image';
+    
     let stylePrompt = "simple clean thick black outlines, bold cartoon style, no shading, no colors, white background";
     if (style === 'realistic') stylePrompt = "realistic thin pencil sketch, white background";
     else if (style === 'mandala') stylePrompt = "intricate mandala line art, white background";
@@ -52,12 +56,16 @@ export const generateColoringPageImage = async (description: string, style: stri
     else if (style === 'chibi') stylePrompt = "cute chibi line art, thick outlines, white background";
     else if (style === 'anime') stylePrompt = "anime line art, white background";
 
-    const finalPrompt = `Coloring book page for kids: ${description}. Style: ${stylePrompt}. Black and white only, pure white background.`;
+    const finalPrompt = `Coloring book page for kids: ${description}. Style: ${stylePrompt}. Black and white only, pure white background. High contrast.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: modelName,
       contents: { parts: [{ text: finalPrompt }] },
-      config: { imageConfig: { aspectRatio: "3:4" } }
+      config: { 
+        imageConfig: { 
+          aspectRatio: "3:4"
+        } 
+      }
     });
 
     const parts = response.candidates?.[0]?.content?.parts;
@@ -69,7 +77,6 @@ export const generateColoringPageImage = async (description: string, style: stri
     
     throw new Error("IMAGE_NOT_FOUND");
   } catch (error: any) {
-    // Kota hatası kontrolü
     if (error.message?.includes("429") || error.message?.includes("quota")) {
       throw new Error("QUOTA_EXCEEDED");
     }

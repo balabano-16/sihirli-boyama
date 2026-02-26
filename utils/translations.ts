@@ -56,6 +56,17 @@ export const translations = {
       themeTemplate: "Theme: {theme}",
       createdWith: "Created with MagicColor",
       pagePrefix: "Page"
+    },
+    quota: {
+      limitReached: "Daily limit reached!",
+      limitDesc: "You can generate 2 coloring books per day. If you enjoy this tool, please consider supporting the creator!",
+      supportTitle: "Do you like this project?",
+      supportDesc: "MagicColor is completely free. If it helped you, you can support by buying a coffee!",
+      supportBtn: "Buy me a coffee"
+    },
+    footer: {
+      madeBy: "Designed & Developed by",
+      portfolio: "View Portfolio"
     }
   },
   es: {
@@ -112,6 +123,17 @@ export const translations = {
       themeTemplate: "Tema: {theme}",
       createdWith: "Creado con MagicColor",
       pagePrefix: "Página"
+    },
+    quota: {
+      limitReached: "¡Límite diario alcanzado!",
+      limitDesc: "Puedes generar 2 libros por día. Si te gusta esta herramienta, ¡considera apoyar al creador!",
+      supportTitle: "¿Te gusta este proyecto?",
+      supportDesc: "MagicColor es completamente gratis. Si te ayudó, ¡puedes apoyarnos invitándonos a un café!",
+      supportBtn: "Cómprame un café"
+    },
+    footer: {
+      madeBy: "Diseñado y Desarrollado por",
+      portfolio: "Ver Portafolio"
     }
   },
   tr: {
@@ -168,6 +190,17 @@ export const translations = {
       themeTemplate: "Tema: {theme}",
       createdWith: "SihirliBoyama ile oluşturuldu",
       pagePrefix: "Sayfa"
+    },
+    quota: {
+      limitReached: "Günlük limit doldu!",
+      limitDesc: "Günde en fazla 2 boyama kitabı oluşturabilirsiniz. Eğer bu aracı sevdiyseniz, geliştiriciye destek olabilirsiniz!",
+      supportTitle: "Bu projeyi beğendiniz mi?",
+      supportDesc: "SihirliBoyama tamamen ücretsizdir. Eğer size yardımcı olduysa bir kahve ısmarlayarak destek olabilirsiniz!",
+      supportBtn: "Bir kahve ısmarla"
+    },
+    footer: {
+      madeBy: "Tasarım ve Geliştirme:",
+      portfolio: "Portfolyoyu Görüntüle"
     }
   }
 };
