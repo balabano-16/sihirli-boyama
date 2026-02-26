@@ -12,24 +12,45 @@ const textToImage = (text: string, fontSize: number, isBold: boolean, color: str
   const fontFamily = "'Comic Neue', 'Inter', sans-serif";
   
   ctx.font = `${fontStyle} ${fontSize * scale}px ${fontFamily}`;
-  let metrics = ctx.measureText(text);
   
-  // Eğer metin maxWidth'den büyükse fontu küçült
-  let currentFontSize = fontSize;
-  while (metrics.width / scale > maxWidth && currentFontSize > 8) {
-    currentFontSize -= 1;
-    ctx.font = `${fontStyle} ${currentFontSize * scale}px ${fontFamily}`;
-    metrics = ctx.measureText(text);
-  }
+  // Metni satırlara böl
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = words[0];
 
-  canvas.width = (metrics.width + 20);
-  canvas.height = (currentFontSize * scale * 1.5);
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(currentLine + " " + word).width;
+    if (width / scale < maxWidth) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  lines.push(currentLine);
+
+  const lineHeight = fontSize * 1.4;
+  const totalHeight = lines.length * lineHeight;
   
-  ctx.font = `${fontStyle} ${currentFontSize * scale}px ${fontFamily}`;
+  // En uzun satırın genişliğini bul
+  let maxLineWidth = 0;
+  lines.forEach(line => {
+    const w = ctx.measureText(line).width;
+    if (w > maxLineWidth) maxLineWidth = w;
+  });
+
+  canvas.width = (maxLineWidth + 40);
+  canvas.height = (totalHeight * scale * 1.2);
+  
+  ctx.font = `${fontStyle} ${fontSize * scale}px ${fontFamily}`;
   ctx.fillStyle = color;
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'top';
   ctx.textAlign = 'center';
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  
+  lines.forEach((line, index) => {
+    ctx.fillText(line, canvas.width / 2, (index * lineHeight * scale) + (lineHeight * scale * 0.1));
+  });
   
   return {
     data: canvas.toDataURL('image/png'),
@@ -64,16 +85,16 @@ export const generatePDF = (childName: string, theme: string, images: GeneratedI
     doc.setLineWidth(2);
     doc.rect(margin, margin, width - (margin * 2), height - (margin * 2), "S");
 
-    // Başlık (Görsel olarak) - Boyut 36 -> 28'e düşürüldü
+    // Başlık (Görsel olarak)
     const titleImg = textToImage(titleText.toUpperCase(), 28, true, '#1e293b', safeMaxWidth);
-    doc.addImage(titleImg.data, 'PNG', (width - titleImg.width) / 2, 35, titleImg.width, titleImg.height);
+    doc.addImage(titleImg.data, 'PNG', (width - titleImg.width) / 2, 30, titleImg.width, titleImg.height);
 
     if (images.length > 0) {
       const coverImg = images[0];
-      const imgWidth = 100;
-      const imgHeight = 133; 
+      const imgWidth = 110;
+      const imgHeight = 146; 
       const xPos = (width - imgWidth) / 2;
-      const yPos = 65;
+      const yPos = 55;
       
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.1);
@@ -82,17 +103,17 @@ export const generatePDF = (childName: string, theme: string, images: GeneratedI
       doc.addImage(coverImg.base64, 'PNG', xPos, yPos, imgWidth, imgHeight, undefined, 'FAST');
     }
 
-    // Alt Başlık (İsim içeren kısım) - Boyut 22 -> 18'e düşürüldü
-    const subImg = textToImage(subtitleText, 18, true, '#4f46e5', safeMaxWidth);
-    doc.addImage(subImg.data, 'PNG', (width - subImg.width) / 2, 225, subImg.width, subImg.height);
+    // Alt Başlık (İsim içeren kısım)
+    const subImg = textToImage(subtitleText, 22, true, '#4f46e5', safeMaxWidth);
+    doc.addImage(subImg.data, 'PNG', (width - subImg.width) / 2, 210, subImg.width, subImg.height);
     
-    // Tema Bilgisi - Boyut 12 -> 10'a düşürüldü
-    const themeImg = textToImage(themeText, 10, false, '#64748b', safeMaxWidth);
-    doc.addImage(themeImg.data, 'PNG', (width - themeImg.width) / 2, 245, themeImg.width, themeImg.height);
+    // Tema Bilgisi (Wrapped)
+    const themeImg = textToImage(themeText, 11, false, '#64748b', safeMaxWidth);
+    doc.addImage(themeImg.data, 'PNG', (width - themeImg.width) / 2, 230, themeImg.width, themeImg.height);
 
     // Footer
     const footerImg = textToImage(footerText, 8, false, '#94a3b8', safeMaxWidth);
-    doc.addImage(footerImg.data, 'PNG', (width - footerImg.width) / 2, height - 20, footerImg.width, footerImg.height);
+    doc.addImage(footerImg.data, 'PNG', (width - footerImg.width) / 2, height - 22, footerImg.width, footerImg.height);
 
     // --- BOYAMA SAYFALARI ---
     images.forEach((img, index) => {

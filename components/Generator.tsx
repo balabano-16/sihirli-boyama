@@ -8,7 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const Generator: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [theme, setTheme] = useState('');
   const [childName, setChildName] = useState('');
   const [artStyle, setArtStyle] = useState<ArtStyle>('cartoon');
@@ -150,6 +150,11 @@ export const Generator: React.FC = () => {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                 required
               />
+              <p className="mt-1.5 text-[11px] text-slate-400 leading-relaxed">
+                {language === 'tr' ? '💡 İpucu: Telifli karakter isimleri (Elsa, Batman vb.) yerine karakterin özelliklerini tarif ederek (Buz prensesi, pelerinli kahraman vb.) daha iyi sonuç alabilirsiniz.' : 
+                 language === 'es' ? '💡 Consejo: En lugar de nombres de personajes con derechos de autor (Elsa, Batman, etc.), puedes obtener mejores resultados describiendo sus características (Princesa de hielo, héroe con capa, etc.).' :
+                 '💡 Tip: Instead of copyrighted character names (Elsa, Batman, etc.), you can get better results by describing their features (Ice princess, hero with a cape, etc.).'}
+              </p>
             </div>
           </div>
 
