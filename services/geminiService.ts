@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAI = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey || apiKey === "undefined" || apiKey === "") {
     throw new Error("API_KEY_MISSING");
   }
@@ -37,6 +37,9 @@ export const generateCreativePrompts = async (theme: string): Promise<string[]> 
     return Array.isArray(parsed) ? parsed : [];
   } catch (e: any) {
     console.error("Prompts generation failed:", e);
+    if (e.message?.includes("429") || e.message?.toLowerCase().includes("quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
     throw e;
   }
 };
@@ -45,8 +48,6 @@ export const generateColoringPageImage = async (description: string, style: stri
   try {
     const ai = getAI();
     
-    // Ücretli anahtar varsa daha yüksek kalite için pro modeli kullanılabilir, 
-    // ancak şu an maliyet ve hız dengesi için 2.5-flash-image ile devam ediyoruz.
     const modelName = 'gemini-2.5-flash-image';
     
     let stylePrompt = "simple clean thick black outlines, bold cartoon style, no shading, no colors, white background";
@@ -77,7 +78,8 @@ export const generateColoringPageImage = async (description: string, style: stri
     
     throw new Error("IMAGE_NOT_FOUND");
   } catch (error: any) {
-    if (error.message?.includes("429") || error.message?.includes("quota")) {
+    console.error("Image generation failed:", error);
+    if (error.message?.includes("429") || error.message?.toLowerCase().includes("quota")) {
       throw new Error("QUOTA_EXCEEDED");
     }
     throw error;
@@ -88,9 +90,22 @@ export const sendMessageToChat = async (message: string): Promise<string> => {
   try {
     const ai = getAI();
     const chat = ai.chats.create({ model: 'gemini-3-flash-preview' });
-    const result = await chat.sendMessage({ message });
+    
+    // Basit bir timeout mantığı
+    const responsePromise = chat.sendMessage({ message });
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("TIMEOUT")), 15000)
+    );
+
+    const result = await Promise.race([responsePromise, timeoutPromise]) as any;
     return result.text || "";
-  } catch (e) {
-    return "Bağlantı hatası.";
+  } catch (e: any) {
+    console.error("Chat failed:", e);
+    if (e.message === "API_KEY_MISSING") return "Hata: API anahtarı ayarlanmamış.";
+    if (e.message === "TIMEOUT") return "Üzgünüm, cevap çok uzun sürdü. Lütfen tekrar deneyin.";
+    if (e.message?.includes("429") || e.message?.toLowerCase().includes("quota")) {
+      return "Üzgünüm, şu an çok fazla istek var (Kota doldu). Lütfen biraz bekleyip tekrar deneyin.";
+    }
+    return "Bağlantı hatası oluştu. Lütfen internetinizi ve API anahtarınızı kontrol edin.";
   }
 };
