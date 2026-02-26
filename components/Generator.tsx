@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Download, Sparkles, Loader2, BookOpen, AlertCircle } from 'lucide-react';
+import { Download, Sparkles, Loader2, BookOpen, AlertCircle, Coffee, Heart } from 'lucide-react';
 import { generateCreativePrompts, generateColoringPageImage } from '../services/geminiService';
 import { generatePDF } from '../utils/pdfGenerator';
 import { GeneratedImage, GenerationStatus, ArtStyle } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// Bekleme fonksiyonu
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const Generator: React.FC = () => {
@@ -16,10 +15,44 @@ export const Generator: React.FC = () => {
   const [status, setStatus] = useState<GenerationStatus>(GenerationStatus.IDLE);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [progressMessage, setProgressMessage] = useState('');
+  const [quotaReached, setQuotaReached] = useState(false);
+
+  const checkQuota = () => {
+    const today = new Date().toLocaleDateString();
+    const stored = localStorage.getItem('magic_color_quota');
+    if (stored) {
+      const { date, count } = JSON.parse(stored);
+      if (date === today && count >= 2) {
+        setQuotaReached(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const updateQuota = () => {
+    const today = new Date().toLocaleDateString();
+    const stored = localStorage.getItem('magic_color_quota');
+    let count = 1;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.date === today) {
+        count = parsed.count + 1;
+      }
+    }
+    localStorage.setItem('magic_color_quota', JSON.stringify({ date: today, count }));
+    if (count >= 2) setQuotaReached(true);
+  };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!theme || !childName) return;
+
+    if (!checkQuota()) {
+      setStatus(GenerationStatus.ERROR);
+      setProgressMessage(t.quota.limitReached);
+      return;
+    }
 
     setStatus(GenerationStatus.PLANNING);
     setGeneratedImages([]);
@@ -27,17 +60,15 @@ export const Generator: React.FC = () => {
 
     try {
       const prompts = await generateCreativePrompts(theme);
-      
       if (prompts.length === 0) throw new Error("PROMPTS_EMPTY");
 
       setStatus(GenerationStatus.GENERATING);
       const newImages: GeneratedImage[] = [];
       
       for (let i = 0; i < prompts.length; i++) {
-        // Kota hatasını önlemek için her resim arasında 2 saniye bekle
         if (i > 0) {
-          setProgressMessage("API dinlendiriliyor... (Kota koruması)");
-          await sleep(2000);
+          setProgressMessage("Sıradaki sayfa hazırlanıyor...");
+          await sleep(1000); 
         }
 
         const progressMsg = t.header.drawingStatus
@@ -59,8 +90,8 @@ export const Generator: React.FC = () => {
         } catch (err: any) {
           if (err.message === "QUOTA_EXCEEDED") {
             setStatus(GenerationStatus.ERROR);
-            setProgressMessage("Ücretsiz API kotası doldu. Lütfen 1-2 dakika bekleyip tekrar deneyin.");
-            return; // İşlemi durdur
+            setProgressMessage("Kota doldu! Lütfen daha sonra tekrar deneyin.");
+            return;
           }
           console.error(`Failed to generate image ${i + 1}`, err);
         }
@@ -68,6 +99,7 @@ export const Generator: React.FC = () => {
 
       if (newImages.length > 0) {
         setStatus(GenerationStatus.COMPLETED);
+        updateQuota();
       } else {
         setStatus(GenerationStatus.ERROR);
         setProgressMessage(t.header.noImages);
@@ -139,13 +171,18 @@ export const Generator: React.FC = () => {
 
           <button
             type="submit"
-            disabled={status === GenerationStatus.PLANNING || status === GenerationStatus.GENERATING}
+            disabled={status === GenerationStatus.PLANNING || status === GenerationStatus.GENERATING || quotaReached}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {status === GenerationStatus.PLANNING || status === GenerationStatus.GENERATING ? (
               <>
                 <Loader2 className="animate-spin" />
                 {status === GenerationStatus.PLANNING ? t.header.planning : t.header.generating}
+              </>
+            ) : quotaReached ? (
+              <>
+                <AlertCircle />
+                {t.quota.limitReached}
               </>
             ) : (
               <>
@@ -155,6 +192,29 @@ export const Generator: React.FC = () => {
             )}
           </button>
         </form>
+
+        {quotaReached && (
+          <div className="mt-6 p-6 bg-yellow-50 border border-yellow-100 rounded-2xl animate-fade-in">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-yellow-500 rounded-lg text-white">
+                <Coffee size={24} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-yellow-900">{t.quota.limitReached}</h4>
+                <p className="text-sm text-yellow-700 mt-1">{t.quota.limitDesc}</p>
+                <a 
+                  href="https://buymeacoffee.com/osmanbalaban" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="mt-4 inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#FFDD00] text-black rounded-xl text-sm font-bold hover:bg-[#FFDD00]/90 transition-all shadow-sm whitespace-nowrap"
+                >
+                  <Coffee size={18} className="flex-shrink-0" />
+                  <span>{t.quota.supportBtn}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {(status === GenerationStatus.PLANNING || status === GenerationStatus.GENERATING) && (
           <div className="mt-8 text-center animate-fade-in">
@@ -166,11 +226,35 @@ export const Generator: React.FC = () => {
         )}
         
         {status === GenerationStatus.ERROR && (
-          <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-center border border-red-100 flex items-center justify-center gap-2">
-            <AlertCircle size={20} />
-            {progressMessage}
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <div className="p-4 bg-red-50 text-red-700 rounded-xl text-center border border-red-100 flex items-center justify-center gap-2">
+              <AlertCircle size={20} />
+              {progressMessage}
+            </div>
           </div>
         )}
+      </div>
+
+      {/* Buy Me a Coffee Banner */}
+      <div className="mb-12 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl border border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in">
+        <div className="flex items-center gap-4 text-center md:text-left">
+          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-pink-500">
+            <Heart fill="currentColor" size={24} />
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-800">{t.quota.supportTitle}</h4>
+            <p className="text-sm text-slate-600">{t.quota.supportDesc}</p>
+          </div>
+        </div>
+        <a 
+          href="https://buymeacoffee.com/osmanbalaban" 
+          target="_blank" 
+          rel="noreferrer"
+          className="flex items-center justify-center gap-2 px-8 py-3.5 bg-[#FFDD00] text-black rounded-2xl font-bold hover:scale-105 transition-all shadow-md whitespace-nowrap min-w-[200px]"
+        >
+          <Coffee size={20} className="flex-shrink-0" />
+          <span>{t.quota.supportBtn}</span>
+        </a>
       </div>
 
       {generatedImages.length > 0 && (
