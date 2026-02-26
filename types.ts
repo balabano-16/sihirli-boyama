@@ -22,3 +22,12 @@ export enum GenerationStatus {
 export type Language = 'en' | 'es' | 'tr';
 
 export type ArtStyle = 'cartoon' | 'realistic' | 'mandala' | 'pixel' | 'chibi' | 'anime';
+
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}

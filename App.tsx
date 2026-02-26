@@ -5,6 +5,7 @@ import { ChatWidget } from './components/ChatWidget';
 import { HowToUse } from './components/HowToUse';
 import { useLanguage } from './contexts/LanguageContext';
 import { Language } from './types';
+import { ExternalLink, Palette } from 'lucide-react';
 
 const App: React.FC = () => {
   const { t, language, setLanguage } = useLanguage();
@@ -58,6 +59,37 @@ const App: React.FC = () => {
 
       {/* Chat Floating Widget */}
       <ChatWidget />
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 py-12 mt-12">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4">
+            <Palette size={24} />
+          </div>
+          <h3 className="comic-font text-xl font-bold text-slate-800 mb-1">MagicColor</h3>
+          <p className="text-sm text-slate-500 mb-6">{t.appSubtitle}</p>
+          
+          <div className="h-px w-16 bg-slate-200 mb-6"></div>
+          
+          <p className="text-slate-700 font-medium mb-4">
+            {t.footer.madeBy} <span className="text-indigo-600 font-bold">Osman Balaban</span>
+          </p>
+          
+          <a 
+            href="https://www.behance.net/osmanbalaban" 
+            target="_blank" 
+            rel="noreferrer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md group"
+          >
+            <span>{t.footer.portfolio}</span>
+            <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </a>
+          
+          <p className="mt-8 text-xs text-slate-400">
+            © {new Date().getFullYear()} MagicColor. All rights reserved.
+          </p>
+        </div>
+      </footer>
 
       {/* Global Styles for Animations */}
       <style>{`
