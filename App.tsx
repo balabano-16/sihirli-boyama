@@ -3,6 +3,7 @@ import React from 'react';
 import { Generator } from './components/Generator';
 import { ChatWidget } from './components/ChatWidget';
 import { HowToUse } from './components/HowToUse';
+import { SEOContent } from './components/SEOContent';
 import { useLanguage } from './contexts/LanguageContext';
 import { Language } from './types';
 import { ExternalLink, Palette } from 'lucide-react';
@@ -55,6 +56,9 @@ const App: React.FC = () => {
         
         {/* Step-by-step guide section at the bottom */}
         <HowToUse />
+
+        {/* SEO Content Section */}
+        <SEOContent />
       </main>
 
       {/* Chat Floating Widget */}

@@ -105,11 +105,7 @@ export const generatePDF = (childName: string, theme: string, images: GeneratedI
 
     // Alt Başlık (İsim içeren kısım)
     const subImg = textToImage(subtitleText, 22, true, '#4f46e5', safeMaxWidth);
-    doc.addImage(subImg.data, 'PNG', (width - subImg.width) / 2, 210, subImg.width, subImg.height);
-    
-    // Tema Bilgisi (Wrapped)
-    const themeImg = textToImage(themeText, 11, false, '#64748b', safeMaxWidth);
-    doc.addImage(themeImg.data, 'PNG', (width - themeImg.width) / 2, 230, themeImg.width, themeImg.height);
+    doc.addImage(subImg.data, 'PNG', (width - subImg.width) / 2, 215, subImg.width, subImg.height);
 
     // Footer
     const footerImg = textToImage(footerText, 8, false, '#94a3b8', safeMaxWidth);
