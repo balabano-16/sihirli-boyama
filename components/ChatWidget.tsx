@@ -40,6 +40,14 @@ export const ChatWidget: React.FC = () => {
 
     const userMsg: ChatMessage = { role: 'user', text: input, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
+    
+    // Google Analytics Event
+    if (typeof (window as any).gtag === 'function') {
+      (window as any).gtag('event', 'chat_message_sent', {
+        'message_length': input.length
+      });
+    }
+
     setInput('');
     setIsLoading(true);
 

@@ -58,6 +58,15 @@ export const Generator: React.FC = () => {
     setGeneratedImages([]);
     setProgressMessage(t.header.planningMsg);
 
+    // Google Analytics Event
+    if (typeof (window as any).gtag === 'function') {
+      (window as any).gtag('event', 'generate_book', {
+        'theme': theme,
+        'art_style': artStyle,
+        'child_name': childName
+      });
+    }
+
     try {
       const prompts = await generateCreativePrompts(theme);
       if (prompts.length === 0) throw new Error("PROMPTS_EMPTY");
@@ -114,6 +123,16 @@ export const Generator: React.FC = () => {
 
   const handleDownload = () => {
     if (generatedImages.length === 0) return;
+    
+    // Google Analytics Event
+    if (typeof (window as any).gtag === 'function') {
+      (window as any).gtag('event', 'download_pdf', {
+        'child_name': childName,
+        'theme': theme,
+        'page_count': generatedImages.length
+      });
+    }
+
     generatePDF(childName, theme, generatedImages, t.pdf);
   };
 
