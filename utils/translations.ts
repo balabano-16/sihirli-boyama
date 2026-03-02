@@ -43,7 +43,8 @@ export const translations = {
       placeholder: "Ask for theme ideas...",
       needIdeas: "Need ideas?",
       initialMsg: "Hi! I'm here to help you create the perfect coloring book. Need theme ideas?",
-      error: "Sorry, I'm having trouble connecting right now."
+      error: "Sorry, I'm having trouble connecting right now.",
+      limitReached: "Daily chat limit reached! You can ask more questions tomorrow."
     },
     results: {
       title: "Your Coloring Book",
@@ -110,7 +111,8 @@ export const translations = {
       placeholder: "Pide ideas de temas...",
       needIdeas: "¿Necesitas ideas?",
       initialMsg: "¡Hola! Estoy aquí para ayudarte a crear el libro de colorear perfecto.",
-      error: "Lo siento, tengo problemas de conexión."
+      error: "Lo siento, tengo problemas de conexión.",
+      limitReached: "¡Límite de chat diario alcanzado! Puedes hacer más preguntas mañana."
     },
     results: {
       title: "Tu Libro de Colorear",
@@ -177,7 +179,8 @@ export const translations = {
       placeholder: "Tema fikirleri sorun...",
       needIdeas: "Fikre mi ihtiyacın var?",
       initialMsg: "Merhaba! Mükemmel boyama kitabını oluşturmana yardım etmek için buradayım. Tema fikri ister misin?",
-      error: "Üzgünüm, şu anda bağlantı sorunu yaşıyorum."
+      error: "Üzgünüm, şu anda bağlantı sorunu yaşıyorum.",
+      limitReached: "Günlük sohbet limiti doldu! Yarın tekrar soru sorabilirsin."
     },
     results: {
       title: "Boyama Kitabınız",

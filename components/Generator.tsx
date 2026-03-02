@@ -16,6 +16,7 @@ export const Generator: React.FC = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [progressMessage, setProgressMessage] = useState('');
   const [quotaReached, setQuotaReached] = useState(false);
+  const [honeypot, setHoneypot] = useState(''); // Anti-bot field
 
   const checkQuota = () => {
     const today = new Date().toLocaleDateString();
@@ -46,6 +47,13 @@ export const Generator: React.FC = () => {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Honeypot check: if this hidden field is filled, it's a bot
+    if (honeypot) {
+      console.warn("Bot detected via honeypot");
+      return;
+    }
+
     if (!theme || !childName) return;
 
     if (!checkQuota()) {
@@ -155,6 +163,7 @@ export const Generator: React.FC = () => {
                 value={childName}
                 onChange={(e) => setChildName(e.target.value)}
                 placeholder={t.header.childPlaceholder}
+                maxLength={30}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                 required
               />
@@ -166,6 +175,7 @@ export const Generator: React.FC = () => {
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
                 placeholder={t.header.themePlaceholder}
+                maxLength={100}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                 required
               />
@@ -175,6 +185,18 @@ export const Generator: React.FC = () => {
                  '💡 Tip: Instead of copyrighted character names (Elsa, Batman, etc.), you can get better results by describing their features (Ice princess, hero with a cape, etc.).'}
               </p>
             </div>
+          </div>
+
+          {/* Honeypot field - hidden from users but bots will fill it */}
+          <div className="hidden" aria-hidden="true">
+            <input 
+              type="text" 
+              name="website_url" 
+              value={honeypot} 
+              onChange={(e) => setHoneypot(e.target.value)} 
+              tabIndex={-1} 
+              autoComplete="off" 
+            />
           </div>
 
           <div className="space-y-2">

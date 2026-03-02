@@ -14,10 +14,39 @@ export const ChatWidget: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [quotaReached, setQuotaReached] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
+  const checkQuota = () => {
+    const today = new Date().toLocaleDateString();
+    const stored = localStorage.getItem('magic_chat_quota');
+    if (stored) {
+      const { date, count } = JSON.parse(stored);
+      if (date === today && count >= 10) {
+        setQuotaReached(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const updateQuota = () => {
+    const today = new Date().toLocaleDateString();
+    const stored = localStorage.getItem('magic_chat_quota');
+    let count = 1;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.date === today) {
+        count = parsed.count + 1;
+      }
+    }
+    localStorage.setItem('magic_chat_quota', JSON.stringify({ date: today, count }));
+    if (count >= 10) setQuotaReached(true);
+  };
+
   useEffect(() => {
+    checkQuota();
     if (!initializedRef.current) {
       setMessages([{ role: 'model', text: t.chat.initialMsg, timestamp: Date.now() }]);
       initializedRef.current = true;
@@ -38,6 +67,12 @@ export const ChatWidget: React.FC = () => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    if (!checkQuota()) {
+      setMessages(prev => [...prev, { role: 'model', text: t.chat.limitReached, timestamp: Date.now() }]);
+      setInput('');
+      return;
+    }
+
     const userMsg: ChatMessage = { role: 'user', text: input, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     
@@ -55,6 +90,7 @@ export const ChatWidget: React.FC = () => {
       const responseText = await sendMessageToChat(userMsg.text);
       const botMsg: ChatMessage = { role: 'model', text: responseText, timestamp: Date.now() };
       setMessages(prev => [...prev, botMsg]);
+      updateQuota();
     } catch (error) {
       console.error("Chat error", error);
       setMessages(prev => [...prev, { role: 'model', text: t.chat.error, timestamp: Date.now() }]);
@@ -111,12 +147,13 @@ export const ChatWidget: React.FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={t.chat.placeholder}
-              className="flex-1 px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-slate-900 placeholder:text-slate-400"
+              placeholder={quotaReached ? t.chat.limitReached : t.chat.placeholder}
+              disabled={isLoading || quotaReached}
+              className="flex-1 px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50"
             />
             <button 
               type="submit" 
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || quotaReached}
               className="p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send size={18} />

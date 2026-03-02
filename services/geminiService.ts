@@ -1,4 +1,23 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+];
 
 const getAI = () => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -25,6 +44,7 @@ export const generateCreativePrompts = async (theme: string): Promise<string[]> 
       },
       config: {
         responseMimeType: "application/json",
+        safetySettings,
         responseSchema: {
           type: Type.ARRAY,
           items: { type: Type.STRING }
@@ -63,6 +83,7 @@ export const generateColoringPageImage = async (description: string, style: stri
       model: modelName,
       contents: { parts: [{ text: finalPrompt }] },
       config: { 
+        safetySettings,
         imageConfig: { 
           aspectRatio: "3:4"
         } 
@@ -89,7 +110,10 @@ export const generateColoringPageImage = async (description: string, style: stri
 export const sendMessageToChat = async (message: string): Promise<string> => {
   try {
     const ai = getAI();
-    const chat = ai.chats.create({ model: 'gemini-3-flash-preview' });
+    const chat = ai.chats.create({ 
+      model: 'gemini-3-flash-preview',
+      config: { safetySettings }
+    });
     
     // Basit bir timeout mantığı
     const responsePromise = chat.sendMessage({ message });
